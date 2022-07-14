@@ -7,43 +7,44 @@ class UsersController {
   async create( request, response ) {
     const { name, email, password } = request.body;
 
-    const checkUserExists = await knex("users")
-    .where({ email });
-    
-    if(checkUserExists){
-      throw new AppError("Este email já esta sendo utilizado!");
+    const userExist = await knex("users").where({email}).first();
+
+    if(userExist){
+      throw new AppError("email já existente");
     }
 
     const hashedPassword = await hash(password, 8);
-
+    const created_at = knex.fn.now();
+    const updated_at = knex.fn.now();
 
     await knex("users").insert({
       name,
       email,
-      hashedPassword
+      password:hashedPassword,
+      created_at,
+      updated_at
     });
-
 
     return response.status(201).json();
   }
 
   async update(request, response) {
+
     const { name, email , password, old_password} = request.body;
+
     const { id } = request.params;
 
-   
-    const user = await knex("users")
-    .where({ id });
+    const user  = await knex("users").where({ id }).first();
 
     if(!user) {
       throw new AppError("Usuário não encontrado");
     }
 
-    const userWithUpdatedEmail = await knex("users")
-    .where({ email });
+    const usersWithUpdatedEmail = await knex("users").where({ email });
+    const userWithUpdatedEmail = usersWithUpdatedEmail[0];
 
     if(userWithUpdatedEmail && userWithUpdatedEmail.id !== user.id){
-      throw new AppError("Este e-mail já está em uso");
+       throw new AppError("Este e-mail já está em uso");
     }
 
     user.name = name ?? user.name;
@@ -53,26 +54,34 @@ class UsersController {
       throw new AppError("Você precisa informar a senha antiga para definir a nova senha!");
     }
 
-    if(password && old_password) {
-      const checkedPassword = await compare(old_password, user.password);
-      
-      if(!checkedPassword){
-        throw new AppError("A senha antiga não foi informada corretamente.");
-      }
-
-      password = await hash(password, 8);
-    }
-
     const updated_at = knex.fn.now();
 
+    if(password && old_password) {
+      const checkedPassword = await compare(old_password, user.password);
+      console.log(checkedPassword);
+      if(checkedPassword){
+        const hashedPassword = await hash(password, 8);
+        await knex("users")
+        .where({ id })
+        .update({
+         name,
+         email,
+         password:hashedPassword,
+         updated_at
+         });
+         return response.json();
+      }else {
+        throw new AppError("A senha antiga não foi informada corretamente.");
+      }
+    }
     await knex("users")
-      .where({ id })
-      .update({
-      name,
-      email,
-      password,
-      updated_at
-    });
+    .where({ id })
+    .update({
+     name,
+     email,
+     updated_at
+     });
+    
 
     return response.json();
   }
@@ -80,13 +89,18 @@ class UsersController {
   async show( request, response ) {
     const { id } = request.params;
     
-    const user = await knex("users").where({id});
-    const notes = await knex("movie_notes").where({user_id:id}).orderBy("name");
-    
+    const user = await knex("users").where({id}).first();
+
+    if(!user){
+      throw new AppError("nenhum usuário encontrado");
+    }
+    console.log(user);
+    const movies = await knex("movie_notes").where("user_id", user.id).orderBy('title');
+    console.log(movies);
     return response.json({
       ...user,
-      notes,
-    });
+      movies,
+     });
   }
 
   async delete( request, response ) {
