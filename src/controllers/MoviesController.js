@@ -6,7 +6,7 @@ class MoviesController {
   async create( request, response ) {
     const { title, description, rating } = request.body;
 
-    const { user_id } = request.params;
+    const user_id  = request.user.id;
     console.log(request.body);
     console.log(user_id);
 
@@ -83,8 +83,17 @@ class MoviesController {
    }
 
   async index( request, response ) {
-    const { user_id } = request.query;
-    const movies = await knex("movie_notes").where({user_id});
+
+    const { title, tags } = request.query;
+    const  user_id  = request.user.id;
+
+    let movies;
+
+    if(tags) {
+      const filterTags = tags.split(',').map(tag => tag);
+      movies =  await knex("movie_tags")
+        .select([])
+    }
     if(!movies){
       throw new AppError("Não foi encontrado nenhum filme");
     }else{
