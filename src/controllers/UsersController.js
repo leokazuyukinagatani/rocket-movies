@@ -58,7 +58,6 @@ class UsersController {
 
     if(password && old_password) {
       const checkedPassword = await compare(old_password, user.password);
-      console.log(checkedPassword);
       if(checkedPassword){
         const hashedPassword = await hash(password, 8);
         await knex("users")
@@ -94,9 +93,7 @@ class UsersController {
     if(!user){
       throw new AppError("nenhum usuário encontrado");
     }
-    console.log(user);
     const movies = await knex("movie_notes").where("user_id", user.id).orderBy('title');
-    console.log(movies);
     return response.json({
       ...user,
       movies,

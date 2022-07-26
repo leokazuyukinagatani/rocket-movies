@@ -30,7 +30,6 @@ class SessionsController {
       expiresIn
     })
 
-    console.log(user);
     return response.json({user, token});
   }
 }
