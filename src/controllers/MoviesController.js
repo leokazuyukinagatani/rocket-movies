@@ -4,23 +4,21 @@ const knex = require("../database/knex");
 
 class MoviesController {
   async create( request, response ) {
-    const { title, description, rating } = request.body;
+    const { title, description, rating, tags } = request.body;
 
     const user_id  = request.user.id;
-    console.log(request.body);
-    console.log(user_id);
 
-    const moviesExist = await knex("movie_notes").where({user_id}).where({title}).first();
-    console.log(moviesExist);
 
-    if(moviesExist){
+    const noteExist = await knex("movie_notes").where({user_id}).where({title}).first();
+
+    if(noteExist){
      throw new AppError("filme já existente");
     }
     
     const created_at = knex.fn.now();
     const updated_at = knex.fn.now();
 
-    await knex("movie_notes").insert({
+    const note_id = await knex("movie_notes").insert({
       title,
       description,
       rating,
@@ -29,8 +27,20 @@ class MoviesController {
       updated_at
     }) 
 
+    const tagsInsert = tags.map(name => {
+      return{
+        note_id,
+        name,
+        user_id
+      }
+    });
+
+    await knex("movie_tags").insert(tagsInsert);
+
     return response.status(201).json();
   }
+
+  
 
   async update(request, response) {
 
@@ -38,67 +48,67 @@ class MoviesController {
     const { user_id } = request.params;
 
 
-    const moviesExist = await knex("movie_notes").where({user_id}).where({title}).first();
-    console.log(moviesExist);
-    if(moviesExist) {
-      const updated_at = knex.fn.now();
-      await knex("movie_notes")
-        .where({ user_id })
-        .update({
-         title,
-         description,
-         rating,
-         updated_at
-         });
-         return response.json();
-    }else {
+    const noteExist = await knex("movie_notes").where({user_id}).where({title}).first();
+
+    if(!noteExist){
       throw new AppError("titulo de filme não existe");
     }
+   
+    const updated_at = knex.fn.now();
+    await knex("movie_notes")
+      .where({ user_id })
+      .update({
+      title,
+      description,
+      rating,
+      updated_at
+    });
+    return response.json();
+   
   }
 
   async show( request, response ) {
     const { id } = request.params;
-    const movie = await knex("movie_notes").where({id}).first();
-    console.log(movie);
+    const note = await knex("movie_notes").where({id}).first();
 
-    if(movie){
-      return response.json({
-         movie
-      });
-    }else {
+    if(!note){
       throw new AppError("nenhum filme com este id encontrado");
     }
+    
+    const tags = await knex("movie_tags").where({note_id:id}).orderBy("name");
+
+    return({...note, tags});
   }
 
   async delete( request, response ) {
     const { id } = request.params;
-    const movie = await knex("movie_notes").where({id}).first();
-    if(movie){
-      await knex("movie_notes").where({id}).delete();
-
-      return response.json();
-    }else{
+    const note = await knex("movie_notes").where({id}).first();
+    if(!note){
       throw new AppError("id do filme não encontrado");
     }
-   }
+    await knex("movie_notes").where({id}).delete();
+
+    return response.json(); 
+  }
 
   async index( request, response ) {
 
     const { title, tags } = request.query;
     const  user_id  = request.user.id;
 
-    let movies;
+    const notes = await knex("movies_note").where({ user_id }).orderBy("title");
 
     if(tags) {
       const filterTags = tags.split(',').map(tag => tag);
-      movies =  await knex("movie_tags")
+      notes =  await knex("movie_tags")
         .select([])
     }
-    if(!movies){
+
+    if(!notes){
       throw new AppError("Não foi encontrado nenhum filme");
-    }else{
-      return response.json({movies});
     }
+    return response.json({...notes, tags});
+    
   }
 
 

@@ -6,11 +6,9 @@ const tagsRoutes = Router();
 
 const tagsController = new TagsController();
 
+const ensureAuthenticated = require("../middlewares/ensureAuthenticated");
 
-tagsRoutes.post("/", tagsController.create);
-tagsRoutes.delete("/:id", tagsController.delete);
-tagsRoutes.get("/:id", tagsController.show); 
-tagsRoutes.get("/", tagsController.index);
+tagsRoutes.get("/",ensureAuthenticated, tagsController.index);
 
 
 
