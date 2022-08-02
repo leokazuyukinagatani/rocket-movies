@@ -61,7 +61,7 @@ class UsersController {
       if(checkedPassword){
         const hashedPassword = await hash(password, 8);
         await knex("users")
-        .where({ id })
+        .where({ id: user_id })
         .update({
          name,
          email,
