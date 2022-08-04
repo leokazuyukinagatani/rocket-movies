@@ -11,8 +11,9 @@ moviesRoutes.use(ensureAuthenticated)
 moviesRoutes.post("/", moviesController.create);
 moviesRoutes.put("/:user_id", moviesController.update);
 moviesRoutes.delete("/:id", moviesController.delete);
-moviesRoutes.get("/:id", moviesController.show);
+moviesRoutes.get("/:title", moviesController.index);
 moviesRoutes.get("/", moviesController.index);
+
 
 
 

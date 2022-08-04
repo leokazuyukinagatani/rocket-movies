@@ -67,18 +67,6 @@ class MoviesController {
    
   }
 
-  async show( request, response ) {
-    const { id } = request.params;
-    const note = await knex("movie_notes").where({id}).first();
-
-    if(!note){
-      throw new AppError("nenhum filme com este id encontrado");
-    }
-    
-    const tags = await knex("movie_tags").where({note_id:id}).orderBy("name");
-
-    return({...note, tags});
-  }
 
   async delete( request, response ) {
     const { id } = request.params;
@@ -93,23 +81,32 @@ class MoviesController {
 
   async index( request, response ) {
 
-    const { title, tags } = request.query;
-    const  user_id  = request.user.id;
+    const title  = request.params.title;
+    const user_id = request.user.id;
+    let notes;
 
-    const notes = await knex("movies_note").where({ user_id }).orderBy("title");
-
-    if(tags) {
-      const filterTags = tags.split(',').map(tag => tag);
-      notes =  await knex("movie_tags")
-        .select([])
+    if(!title){
+      notes = await knex("movie_notes")
+        .where({user_id})
+        .orderBy("title");
+    }else{
+      notes = await knex("movie_notes")
+        .where({user_id})
+        .whereLike("title", `%${ title }%`)
+        .orderBy("title");
     }
 
-    if(!notes){
-      throw new AppError("Não foi encontrado nenhum filme");
-    }
-    return response.json({...notes, tags});
-    
+    const userTags = await knex("movie_tags").where({user_id});
+    const notesWithTags = notes.map(note => {
+      const noteTags = userTags.filter(
+        tag => tag.note_id === note.id
+      )
+
+      return({
+        ...note,
+        tags: noteTags
+      })
+    })
+    return response.json(notesWithTags);
   }
-
-
 } module.exports = MoviesController;
