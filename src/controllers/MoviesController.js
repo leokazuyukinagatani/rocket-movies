@@ -118,7 +118,7 @@ class MoviesController {
     }
     const tags = await knex("movie_tags").where({note_id: id});
 
-    return response.json({movie,tags});
+    return response.json({...movie,tags});
   }
 
 } module.exports = MoviesController;
