@@ -81,7 +81,7 @@ class MoviesController {
 
   async index( request, response ) {
 
-    const title  = request.params.title;
+    const { title } = request.query;
     const user_id = request.user.id;
     let notes;
 
@@ -109,4 +109,16 @@ class MoviesController {
     })
     return response.json(notesWithTags);
   }
+
+  async show(request, response){
+    const { id } = request.params;
+    const movie = await knex("movie_notes").where({id}).first();
+    if(!movie){
+      throw new AppError("Filme não encontrado");
+    }
+    const tags = await knex("movie_tags").where({note_id: id});
+
+    return response.json({movie,tags});
+  }
+
 } module.exports = MoviesController;
