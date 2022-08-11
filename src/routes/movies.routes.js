@@ -9,7 +9,7 @@ const moviesController = new MoviesController();
 moviesRoutes.use(ensureAuthenticated)
 
 moviesRoutes.post("/", moviesController.create);
-moviesRoutes.put("/:user_id", moviesController.update);
+moviesRoutes.put("/", moviesController.update);
 moviesRoutes.delete("/:id", moviesController.delete);
 moviesRoutes.get("/", moviesController.index);
 moviesRoutes.get("/:id", moviesController.show);

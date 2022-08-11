@@ -44,18 +44,19 @@ class MoviesController {
 
   async update(request, response) {
 
-    const { title, description, rating } = request.body;
-    const { user_id } = request.params;
+    const { id, title, description, rating, tags} = request.body;
+    const user_id  = request.user.id;
 
 
-    const noteExist = await knex("movie_notes").where({user_id}).where({title}).first();
-
+    const noteExist = await knex("movie_notes").where({id}).first();
+    console.log(noteExist);
     if(!noteExist){
-      throw new AppError("titulo de filme não existe");
+      throw new AppError("Não foi possivel encontrar o filme");
     }
    
     const updated_at = knex.fn.now();
     await knex("movie_notes")
+      .where({ id })
       .where({ user_id })
       .update({
       title,
@@ -63,6 +64,21 @@ class MoviesController {
       rating,
       updated_at
     });
+
+    await knex("movie_tags")
+      .where({note_id: id})
+      .delete();
+
+   
+    const tagsInsert = tags.map(name => {
+      return{
+        note_id:id,
+        name,
+        user_id
+      }
+    });
+    await knex("movie_tags").insert(tagsInsert);
+
     return response.json();
    
   }
@@ -70,10 +86,18 @@ class MoviesController {
 
   async delete( request, response ) {
     const { id } = request.params;
-    const note = await knex("movie_notes").where({id}).first();
-    if(!note){
-      throw new AppError("id do filme não encontrado");
+    const user_id = request.user.id;
+    let note;
+    try{
+      note = await knex("movie_notes").where({id}).where({user_id}).first();
+    }catch(error){
+      if(error.data){
+        return AppError(error.data.message);
+      }else{
+        return AppError("id do filme não encontrado");
+      }
     }
+
     await knex("movie_notes").where({id}).delete();
 
     return response.json(); 
@@ -117,8 +141,8 @@ class MoviesController {
       throw new AppError("Filme não encontrado");
     }
     const tags = await knex("movie_tags").where({note_id: id});
-
+    console.log(...tags);
     return response.json({...movie,tags});
   }
-
+  
 } module.exports = MoviesController;
