@@ -4,9 +4,9 @@ const uploadConfig = require("../configs/upload");
 const cloudinary = require("cloudinary").v2;
 
 cloudinary.config({
-  cloud_name: "db5bzryev",
-  api_key: "864331917863694",
-  api_secret: "3HzYLIOWW0ovNTqjvRVsYZdXq2Q",
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
 });
 
 class DiskStorage {
